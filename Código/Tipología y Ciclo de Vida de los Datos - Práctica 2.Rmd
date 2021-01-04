@@ -1,0 +1,634 @@
+---
+title: 'Tipología y Ciclo de Vida de los Datos - Práctica 2'
+author: "Autores: José Castillo Alba - Hubner Janampa Patilla "
+date: "Diciembre 2020"
+output:
+  
+  html_document:
+    highlight: default
+    number_sections: yes
+    theme: cosmo
+    toc: yes
+    toc_depth: 2
+  word_document: default
+  pdf_document:
+    latex_engine: xelatex
+    highlight: zenburn
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+\pagebreak
+
+# Presentación
+
+## Descripción
+En esta práctica se elabora un caso práctico orientado a aprender a identificar los datos relevantes para un proyecto analítico y usar las herramientas de integración, limpieza, validación y análisis de las mismas.
+
+## Competencias
+
+En esta práctica se desarrollan las siguientes competencias del Máster de Data Science:
+
+- Capacidad de analizar un problema en el nivel de abstracción adecuado a cada situación y aplicar las habilidades y conocimientos adquiridos para abordarlo y resolverlo.
+- Capacidad para aplicar las técnicas específicas de tratamiento de datos (integración, transformación, limpieza y validación) para su posterior análisis.
+
+## Objetivos
+
+Los objetivos concretos de esta práctica son:
+
+- Aprender a aplicar los conocimientos adquiridos y su capacidad de resolución de problemas en entornos nuevos o poco conocidos dentro de contextos más amplios o multidisciplinares.
+- Saber identificar los datos relevantes y los tratamientos necesarios (integración, limpieza y validación) para llevar a cabo un proyecto analítico.
+- Aprender a analizar los datos adecuadamente para abordar la información contenida en los datos.
+- Identificar la mejor representación de los resultados para aportar conclusiones sobre el problema planteado en el proceso analítico.
+- Actuar con los principios éticos y legales relacionados con la manipulación de datos en función del ámbito de aplicación. 
+- Desarrollar las habilidades de aprendizaje que les permitan continuar estudiando de un modo que tendrá que ser en gran medida autodirigido o autónomo.
+- Desarrollar la capacidad de búsqueda, gestión y uso de información y recursos en el ámbito de la ciencia de datos.
+
+
+# Desarrollo
+
+## Descripción del dataset. ¿Por qué es importante y qué pregunta/problema pretende responder?
+### ¿Por qué es importante y qué pregunta?
+
+>El **conjunto de datos** está compuesto por variables físico/químicas de un vino Portugués. Se torna muy interesante para los fabricantes y productores vinicolas conocer que tan bueno o malo es el vino que ofrecen al mercado consumidor.
+
+>La finalidad que se persigue al realizar el análisis de las características del vino es conocer las cantidades y elementos físicos/químicos que influyen a la hora determinar su calidad. Se trata de que técnicos especialistas en la elaboración del vino apoyen sus decisiones basado en criterios estadísticos y análiticos.
+
+### ¿Cual es el problema pretende responder?
+
+>El problema que pretende responder es el de determinar la calidad del vino, sobre las cantidades y elementos físicos/químicos que lo influyen, ver que elementos fisicos-químicos son mas sensibles a la hora de determinar su calidad.
+
+>En la práctica se va realizar un análisis exploratorio de los datos que iniciará con la limpieza de datos para conocer si existen valores nulos o vacios, identificar outliers, entre otros. En el caso de ser necesario se determinara las variables de importancia en el estudio, talvez normalizar y/o categorizar, luego se procede con el propio análisis de datos para descubrir patrones que nos lleve a una o varias conclusiones.
+
+>Realizamos la lectura inicial del conjunto de datos, el mismo que esta compuesto 12 variables y 1599 observaciones:
+
+```{r echo=TRUE}
+df <- read.csv('winequality-red.csv',header=T, sep=",", stringsAsFactors = FALSE)
+str(df)
+```
+
+> El fichero esta compuesto por variables de tipo númericos y enteros:
+
+```{r echo=TRUE}
+sapply(df,class)
+```
+
+
+Las variables que forman parte del conjunto de datos, encontramos las siguientes:
+
+* **Fixed acidity/acidez fija:** _La mayoría de los ácidos involucrados con el vino o fijos o no volátiles (no se evaporan fácilmente)._
+* **Volatile acidity/acidez volátil:** 
+_Cantidad de ácido acético en el vino, que en niveles demasiado altos puede provocar un sabor desagradable a vinagre._
+* **Citric acid/ácido cítrico:** _Encontrado en pequeñas cantidades, el ácido cítrico puede agregar 'frescura' y sabor a los vinos._ 
+* **Residual sugar/azúcar residual:** _Cantidad de azúcar que queda después de que se detiene la fermentación._
+* **Chlorides/cloruros:** _Cantidad de sal en el vino._
+* **Free sulfur dioxide/dióxido de azufre libre:** _La forma libre del SO2 existe en equilibrio entre el SO2 molecular (como gas disuelto) y el ion bisulfito._
+* **Total sulfur dioxide/dióxido de azufre total:** 
+_Cantidad de formas libres y unidas de SO2._
+* **Density/densidad:** 
+_La densidad del agua es cercana a la del agua dependiendo del porcentaje de alcohol y contenido de azúcar._
+* **pH:** _Describe qué tan ácido o básico es un vino en una escala de 0 (muy ácido) a 14 (muy básico); la mayoría de los vinos están entre 3-4._
+* **Sulphates/sulfatos:** _Un aditivo para el vino que puede contribuir a los niveles de dióxido de azufre (SO2), que actúa como antimicrobiano._ 
+* **Alcohol/alcohol:** _Porcentaje de alcohol contenido en el vino._
+* **Quality/calidad:** _Basado en datos sensoriales, cuya puntuación es entre 0 y 10._
+
+## Integración y selección de los datos de interés a analizar
+
+En el mundo de los vinos se puede encontrar una gran variedad con características muy diversas, tales como vinos de mesa, vinos fortificados, vinos espumosos, vinos de postre y vinos compuestos. Aún cuando los vinos se encuentran bajo la misma denominación general, pueden tener características muy diferentes debido **al tipo de uva que se utiliza, a la región de donde esta proceda y a las caracterisitcas del proceso de elaboración** _(GARGIA G, QUINTERO R, LOPEZ M - Biotecnología Alimentaria-2003)._
+
+_La acidez es uno de los sabores fundamentales del vino._ Su proporción va a determinar la sensación de frescor y va incidir en su equilibrio. Encontrando en el vino ácidos orgánicos en los cuales tres de ellos son provenientes de la uva (tártiso, málico y cítrico), y los ácidos produnto de la fermentación y la acción de las bacterias(láctico, succínico, acético).
+
+* Provenientes de la uva: ácido tártiso, málico y cítrico, **obteniendo ácidez fija y acidez total.**
+* Originado por la fermentación: ácido láctico, succínico, acético, **obteniendo acidez volátil.** _(PLAZA N. VICTORIA, SUNG K. EUN)_
+
+La _densidad_ de un vino puede indicar su contenido en alcohol pero no determina su calidad, por otra parte el _grado de alcohol_ es importante para conservar las propiedades del vino pero tampoco es un condicionante de calidad y el _aumento de la acidez volátil_ produce un efecto negativo y provoca el picado acético que a la hora de catar se puede percibir aromas y sabores a vinagre. _(LUCAS MARÍA - Los 6 criterios que determinan la calidad en el vino-Noviembre 2015)_
+
+
+A criterio personal de los autores consideramos que la mayoría de variables del dataset pueden llegar a determinar la calidad del vino, ya que se trata de variaciones físico-quimicas que en altas o bajas cantidades alteran su composición. Pero tomando en cuenta los criterios establecidos en los parráfos anteriores se pondrá especial atención a las variables _acidez fija, acidez volátl, density y alcohol_ con el fin de corroborar o descartar si infieren o no en la calidad del vino.
+
+
+# Limpieza de los datos, ¿Los datos contienen ceros o elementos vacíos?,¿Cómo gestionarías cada uno de estos casos?
+
+> Partimos realizamos un detalle estadístico de las variables para conocer como están distribuidas:
+
+```{r echo=TRUE}
+summary(df)
+```
+
+> Por lo regular cuando se trata de datos faltantes, siempre se denotan por campos vacios o cero. Para este caso particular no se puede asegurar al 100% en el caso de valores con cero que se trate precisamente de valores perdidos ya que se puede tratar de elementos fisico/químicos que realmente pueden ser cero, pero se debe descartar la existencia valores vacios. 
+ 
+> A continuación se verifica que campos tienen valores vacíos:
+
+```{r echo=TRUE}
+colSums(is.na(df))
+```
+> Podemos notar que no existen valores vacios, esto es una bueña señal que permite avanzar con en el análisis de los datos.
+
+ 
+## Identificación y tratamiento de valores extremos
+> Los valores extremos tambien conocidos como outliers, se trata de datos muy alejados de la ditribución normal de una variable (datos anómalos). Al momento de realizar el análisis, la presencia de datos extremos pueden generar estimaciones y/o resultados equivocados, por tal razón se procede a graficar mediante diagrama de cajas para corroborar o descartar la existencia.
+
+```{r echo=TRUE}
+par(mfrow=c(2,2))
+boxplot(df$fixed.acidity,main="fixed.acidity")
+hist(df$fixed.acidity,main="fixed.acidity")
+
+boxplot(df$volatile.acidity,main="volatile.acidity")
+hist(df$volatile.acidity,main="volatile.acidity")
+
+boxplot.stats(df$fixed.acidity)$out
+boxplot.stats(df$volatile.acidity)$out
+
+```
+
+
+```{r echo=TRUE}
+par(mfrow=c(2,2))
+boxplot(df$citric.acid,main="citric.acid")
+hist(df$citric.acid,main="citric.acid")
+
+boxplot(df$residual.sugar,main="residual.sugar")
+hist(df$residual.sugar,main="residual.sugar")
+
+boxplot.stats(df$citric.acid)$out
+boxplot.stats(df$residual.sugar)$out
+
+```
+
+
+```{r echo=TRUE}
+par(mfrow=c(2,2))
+boxplot(df$chlorides,main="chlorides")
+hist(df$fixed.acidity,main="chlorides")
+
+boxplot(df$free.sulfur.dioxide,main="free.sulfur.dioxide")
+hist(df$free.sulfur.dioxide,main="free.sulfur.dioxide")
+
+boxplot.stats(df$chlorides)$out
+boxplot.stats(df$free.sulfur.dioxide)$out
+
+```
+
+
+
+```{r echo=TRUE}
+par(mfrow=c(2,2))
+boxplot(df$total.sulfur.dioxide,main="total.sulfur.dioxide")
+hist(df$total.sulfur.dioxide,main="total.sulfur.dioxide")
+
+boxplot(df$density,main="density")
+hist(df$density,main="density")
+
+boxplot.stats(df$total.sulfur.dioxide)$out
+boxplot.stats(df$density)$out
+
+```
+
+
+```{r echo=TRUE}
+par(mfrow=c(2,2))
+boxplot(df$pH,main="pH")
+hist(df$pH,main="pH")
+
+boxplot(df$sulphates,main="sulphates")
+hist(df$sulphates,main="sulphates")
+
+boxplot.stats(df$pH)$out
+boxplot.stats(df$sulphates)$out
+```
+
+```{r echo=TRUE}
+par(mfrow=c(1,2))
+boxplot(df$alcohol,main="alcohol")
+hist(df$alcohol,main="alcohol")
+
+boxplot.stats(df$alcohol)$out
+```
+
+
+> Revisando los diagramas de caja, notamos presencia de valores extremos en todas las variables, pero se detalla algunas particularidades en relación al histograma.
+
+> * La variable **citric.acid** si nos fijamos en el histograma tiene varias entradas en cero que se puede tratar de valores reales o incompletos, por lo que el diagrama de caja muestra 1 outliers mayor a cero.
+
+> * Las variables **fixed.acidity, chlorides, residual.sugar, density y pH** a pesar que presentan outlier visualmente (histograma), se puede deducir que tienden a una distrbución normal.
+
+> * Las variables **total.sulfur.dioxide, sulphates, alcohol** es de cola larga hacia la derecha lo que produce los valores extremos presentes.
+
+> En **conclusión** la elaboración de los vinos se ve influenciado por los elementos físico/químico que lo componen de esa manera se puede obtener una gran variedad, por tal razón no se trata de valores extremos sino datos reales que se presentan. 
+
+# Análisis de los datos.
+## Selección de los grupos de datos que se quieren analizar/comparar (planificación  de los análisis a aplicar)
+
+> A continuación de determina los grupos del conjunto de datos que pueden resultar interesantes para su posterior análisis:
+
+```{r echo=TRUE}
+TotalResidualSugar <- quantile(df$residual.sugar,probs =0.75)
+df.altoResidualSugar <- df[df$residual.sugar>=TotalResidualSugar,]$quality
+df.bajoResidualSugar <- df[df$residual.sugar<TotalResidualSugar,]$quality
+```
+
+```{r echo=TRUE}
+totalSulfurDioxide <- quantile(df$total.sulfur.dioxide,probs =0.75)
+df.altoTotalSulfurDioxide <- df[df$total.sulfur.dioxide>=totalSulfurDioxide,]$quality
+df.bajoTotalSulfurDioxide <- df[df$total.sulfur.dioxide<totalSulfurDioxide,]$quality
+```
+
+```{r echo=TRUE}
+TotalDensity <- quantile(df$density,probs =0.75)
+df.altoAlcohol <- df[df$density>=TotalDensity,]$quality
+df.bajoAlcohol <- df[df$density<TotalDensity,]$quality
+```
+
+
+```{r echo=TRUE}
+Totalalcohol <- quantile(df$alcohol,probs =0.75)
+df.altoAlcohol <- df[df$alcohol>=Totalalcohol,]$quality
+df.bajoAlcohol <- df[df$alcohol<Totalalcohol,]$quality
+```
+
+
+## Comprobación de la normalidad y homogeneidad de la varianza.
+> Verificamos si las variables presentan normalidad, aunque en los apartados anteriores ya se hizo un análisis previo de la distribución. Esta vez vamos a graficar mediante quartile e histograma.
+
+```{r echo=TRUE}
+
+par(mfrow=c(2,2))
+for(i in 1:ncol(df)-1) {
+if (is.numeric(df[,i])){
+qqnorm(df[,i],main = paste("Normal Q-Q Plot for ",colnames(df)[i]))
+qqline(df[,i],col="red")
+hist(df[,i],
+main=paste("Histogram for ", colnames(df)[i]),
+xlab=colnames(df)[i],freq =FALSE)
+}
+}
+```
+
+> Analizando los quantile-quantile podemos suponer una normalización de las variables. Para afirmar o descartar las gráficas se aplica el test Lilliefors.
+
+#### Test estadístico de Lilliefors
+En este apartado se evalúa las variables mediante el test de Lilliefors para comprobar normalidad.
+
+```{r echo=TRUE}
+library("nortest")
+alpha =0.05
+col.names = colnames(df)
+for (i in 1:ncol(df)) {
+  if (i == 1) cat("Variables que no siguen una distribución normal:\n")
+    if (is.integer(df[,i]) |is.numeric(df[,i])) {
+        p_val = lillie.test(df[,i])$p.value
+    if (p_val < alpha) {
+        cat(col.names[i])
+        # Format output
+    if (i <ncol(df) - 1) cat(", ")
+    if (i %% 3 == 0) cat("\n")
+    }
+    }
+}
+```
+
+> El test Lilliefors, nos indica que las variables realmente no siguen una distribución normal, este suceso se da principalmente por los valores extremos que se analizaron en los apartados anteriores, pero como lo habiamos manifestado no se pueden eliminar porque son parte del análisis.
+
+>Aunque ya se ha corroborado que las variables no presentan normalidad, pero a modo de ejemplo y de manera detallada vamos a conocer el _p-valor de las residual.sugar, total.sulfur.dioxide, density y alcohol_.
+
+```{r echo=TRUE}
+lillie.test(x = df$residual.sugar)
+lillie.test(x = df$total.sulfur.dioxide)
+lillie.test(x = df$density)
+lillie.test(x = df$alcohol)
+```
+
+>Como se puede apreciar el p-valor de las variables analizadas están por debajo del 0.05 por lo que efectivamente no cumplen normalidad.
+
+
+> Aplicando el _**Teorema del Límite Central**_ el mismo que manifiesta, dada una muestra suficientemente grande (>30), la distribución de las medias muestrales seguirá una distribución normal.
+
+## Aplicación de pruebas estadísticas para comparar los grupos de datos. En función de los datos y el objetivo del estudio, aplicar pruebas de contraste de hipótesis, correlaciones, regresiones, etc. Aplicar al menos tres métodos de análisis diferentes
+
+### Correlaciones:
+> Se procede a realizar un análisis de correlaciones con las distintas variables con la finalidad de conocer cuales presentan mayor peso a la hora de determinar la calidad del vino (variable **quality**):
+
+```{r echo=TRUE}
+corr_matrix <- matrix(nc =2,nr =0)
+colnames(corr_matrix) <- c("estimate","p-value")
+
+# Calcular el coeficiente de correlación para cada variable cuantitativa 
+# con respecto al campo "quality"
+for (i in 1:(ncol(df) - 1)) {
+  if (is.integer(df[,i]) |is.numeric(df[,i])) {
+    spearman_test = cor.test(df[,i],df[,length(df)],method ="spearman")
+    corr_coef =spearman_test$estimate
+    p_val =spearman_test$p.value
+# Add row to matrix
+    pair = matrix(ncol =2,nrow =1)
+    pair[1][1] =corr_coef
+    pair[2][1] =p_val
+    corr_matrix <- rbind(corr_matrix, pair)
+    rownames(corr_matrix)[nrow(corr_matrix)] <- colnames(df)[i]
+  }
+}
+
+print(corr_matrix)
+```
+
+> De acuerdo a los resultados obtenidos las 3 principales variables que tienen mayor relevancia son: _alcohol, volatile.acidity y sulphates.
+
+
+### Contraste de Hipótesis:
+
+> Realizamos algunos contrastes de hipótesis para algunas variables.
+
+**Contraste de hipótesis unilateral sobre la cantidad de azúcar (df.bajoResidualSugar):**
+
+**Hipótesis nula** $$H_0:         \mu_1 = \mu_2$$ 
+
+**Hipótesis alternativa** $$H_1:   \mu_1< \mu_2$$
+
+```{r echo=TRUE}
+t.test(df.bajoResidualSugar, df$quality,alternative ="less")
+```
+
+
+_**Contraste de hipótesis unilateral sobre la cantidad total de Dióxido de sulfuro (df.altoTotalSulfurDioxide):**_
+
+**Hipótesis nula** $$H_0:         \mu_1 = \mu_2$$ 
+
+**Hipótesis alternativa** $$H_1:   \mu_1< \mu_2$$
+```{r echo=TRUE}
+t.test(df.altoTotalSulfurDioxide, df$quality,alternative ="less")
+```
+
+_**Contraste de hipótesis unilateral sobre la cantidad de alcohol (df.altoAlcohol):**_ 
+
+**Hipótesis nula** $$H_0:         \mu_1 = \mu_2$$  
+
+**Hipótesis alternativa** $$H_1:   \mu_1< \mu_2$$
+
+```{r echo=TRUE}
+t.test(df.altoAlcohol, df$quality,alternative ="greater")
+```
+
+### Regresión 
+#### Importación y procesamiento de datos
+
+Dividiremos el conjunto de datos en un conjunto de entrenamiento y prueba, y normalizaremos cada conjunto por separado.
+
+
+```{r echo=TRUE}
+    df <- read.csv('winequality-red.csv',header=T, sep=",", 
+                   stringsAsFactors = FALSE)
+    n = nrow(df); p = ncol(df); dim(df)
+```
+
+
+```{r echo=TRUE}
+ head(df) # check the first few lines
+
+```
+
+```{r echo=TRUE}
+ str(df) # check the general structure
+```
+> Parece que el conjunto de datos está muy limpio, sin datos faltantes y con una estructura clara. Todas las variables son numéricas. El rango de variables independientes varía mucho, por lo que al construir el modelo, las normalizaremos para que estén dentro del mismo rango.
+
+> Luego verificaremos la relación por pares de cada variable. Como podemos ver en la siguiente figura, no existe una relación lineal clara entre la variable de calidad y otras covariantes, lo que indica que una regresión lineal simple podría no funcionar.
+
+```{r echo=TRUE}
+    library(psych) 
+    pairs.panels(df)
+```
+
+> Datos de entrenamiento
+
+```{r echo=TRUE}
+    set.seed(1)
+    idx = sample(n, 0.9*n)
+    train = df[idx,]; dim(train)
+
+```
+
+> Datos de prueba
+
+```{r echo=TRUE}
+    test = df[-idx,]; dim(test)
+```
+
+> Normalizamos el conjunto de entrenamiento en el rango de 0 a 1, tal como observamos lineas abajo, para todas las variables de clase.
+
+```{r echo=TRUE}
+    # Normalizamos el conjunto de entrenamiento en el rango de 0 a 1
+    normalize_train = function(x) (x - min(x))/(max(x) - min(x))
+    train.norm = data.frame(apply(train[,-p], 2, normalize_train), 
+                            quality = train[,p])
+    summary(train.norm)
+```
+
+
+#### Regresión lineal
+> Este no es siempre el mejor modelo, pero está bien para empezar, para que tengamos un sentido básico de la relación entre la variable independiente y la variable dependiente y=f(x).
+
+> Primero, verificaré la normalidad de la variable dependiente usando la prueba de Shapiro-Wilk.
+
+ 
+
+```{r echo=TRUE}
+    hist(df$quality) 
+```
+
+
+
+```{r echo=TRUE}
+    #No pasó la prueba de normalidad, por lo que el modelo lineal puede tener un problema
+    shapiro.test(df$quality) 
+```
+> La variable dependiente no pasa la prueba de normalidad ( p-value < 2.2e-16), por lo que no se cumple un supuesto de regresión lineal. Además, como vemos en la gráfica de pares, la relación entre las variables independientes y las variables dependientes no es completamente lineal. También existe cierta colinealidad entre las variables independientes. Cualquiera de ellos podría sabotear el rendimiento del modelo lineal.
+
+> Ahora realizamos la regresión lineal tal como se observa lineas abajo, observamos que la corte con eje Y es igual a  5.6615. 
+
+
+```{r echo=TRUE}
+    tr.lm = lm(quality~., data = train.norm)
+    summary(tr.lm) 
+```
+
+#### Regresión Logística
+
+> Transformación de la variable quality en categórica:
+
+```{r echo=TRUE}
+quality_2 <- ifelse(df$quality>6,yes=1,no=0)
+df$quality2 <- quality_2
+```
+
+> Regresión logística con todas las variables:
+
+```{r echo=TRUE}
+rlg1 <- glm(quality2 ~ . -quality ,family=binomial(logit),data=df)
+summary(rlg1)
+summary(rlg1)$aic
+```
+
+> Regresión logística con las variables significativas de acuerdo al análisis anterior con un p-value menor o igual a 0.05:
+
+```{r echo=TRUE}
+rlg2 <- glm(quality2 ~ fixed.acidity + volatile.acidity + 
+              residual.sugar + chlorides + 
+              total.sulfur.dioxide + density +  sulphates +  
+              alcohol ,family=binomial(logit),data=df)
+summary(rlg2)
+summary(rlg2)$aic
+```
+
+> Regresión logística con las variables significativas de acuerdo a la clasificación realizada en el apartado de correlaciones:
+
+```{r echo=TRUE}
+rlg3 <- glm(quality2 ~  alcohol+ volatile.acidity + sulphates +  citric.acid  +  
+              total.sulfur.dioxide + chlorides +  density + fixed.acidity ,
+              family=binomial(logit),data=df)
+summary(rlg3)
+summary(rlg3)$aic
+```
+
+> Regresión logística ajustando el modelo con las 4 variables mejor correlacionadas tomando el criterio de correlaciones:
+
+```{r echo=TRUE}
+rlg4 <- glm(quality2 ~  alcohol+ volatile.acidity + sulphates +  
+              citric.acid ,family=binomial(logit),data=df)
+summary(rlg4)$aic
+```
+
+> Tomando en cuenta el criterio de información de Akaike (AIC), el  último modelo presenta una mejor calidad del modelo en comparación a los anteriores, pero consideramos que estaria sobreajustado limitando demasiado el conjunto, por tal motivo se considera como un modelo bueno al **rlg3** tomando en cuenta lo criterios de correlaciones.
+
+
+#### Datos de entrenamiento y prueba
+
+> División del conjuntos de datos en datos de entrenamiento y prueba, lo dividiremos en un 80% de datos para conjuntos de datos de entrenamiento y un 20% de datos para conjuntos de datos de prueba.
+
+```{r echo=TRUE}
+  set.seed(1)
+  sampleSize <- round(nrow(df)*0.8)
+  idx <- sample(seq_len(sampleSize), size = sampleSize)
+  
+  X.train_red <- df[idx,]
+  X.test_red <- df[-idx,]
+  
+  rownames(X.train_red) <- NULL
+  rownames(X.test_red) <- NULL
+```
+
+
+#### Regresión multivaribale para predicción a partir de datos de entrenamiento.
+##### Crear el modelo de regresión multivariable
+
+> Como se mencionó en el análisis exploratorio de datos, emplearemos todas las variables predictoras, excepto el azúcar residual (residual.sugar), para el modelo. Creemos un modelo multivariable a partir de esas variables (multivariable).
+
+> De los resultados que muestra la función $summary()$, se puede ver que aproximadamente la mitad de todas las variables predictoras exhiben insignificancia. Además, el $R-cuadrado ajustado =0.3645$ es un resultado pobre. Antes de abordar este problema, deberimos verificar algunos supuestos para el modelado.
+
+```{r echo=TRUE}
+    model_red1 <- lm(quality ~ fixed.acidity + volatile.acidity + 
+                       citric.acid + chlorides + free.sulfur.dioxide +  
+                       total.sulfur.dioxide + density + pH + 
+                       sulphates + alcohol, 
+                       data = X.train_red)
+    summary(model_red1)
+```
+
+> En este capítulo, analizaremos el mejor modelo hasta ahora y lo usaremos para predecir el conjunto de datos de prueba. En primer lugar, debemos interpretar el modelo seleccionado. Posteriormente, se discute el desempeño del modelo y las predicciones se realizarán posteriormente.
+
+> El modelo que se determino tiene todas las variables preditoras (11 en total) para el conjunto de datos de entrenamiento, a partir del cual determinamos la siguiente ecuación: 
+
+> Ahora construimos el modelo multivariable para determinar la calidad de vino en función de todas las variables de clase: $$Y_{estimado} = β_0 + β_1X_1 + β_2X_2 + β_3X_3 + β_4X_4 + β_5X_5 + β_6X_6 + β_7X_7 + β_8X_8 + β_9X_9 + β_{10}X_{10} + β_{11}X_{11}$$, donde $β_1$ a $β_{11}$ son los pesos para las variables $X_1$  a  $X_{11}$, y $β_0$ es la intersección con el eje $Y$.
+
+```{r echo=TRUE}
+    model_redAll <- lm(quality ~ ., data = X.train_red)
+    summary(model_redAll)
+```
+> La función multivariable para determinar la calidad de vino: $$Y_{estimado} = β_0 + β_1X_1 + β_2X_2 + β_3X_3 + β_4X_4 + β_5X_5 + β_6X_6 + β_7X_7 + β_8X_8 + β_9X_9 + β_{10}X_{10} + β_{11}X_{11}$$, con los siguientes valores calculados :$β_0 = -3.150e+01; β_1 = -2.598e-02; ....;β_{11} = 1.769e-0$
+
+
+```{r echo=TRUE}
+    model_redAll$coefficients
+```
+
+
+# Representación de los resultados a partir de tablas y gráficas
+
+
+```{r echo=TRUE}
+library(ggcorrplot)
+#ggcorrplot(cor(df),insig = "blank", lab = TRUE)
+ggcorrplot(round(cor(df),digits = 2), hc.order = TRUE, type = "lower", 
+           lab = TRUE, insig = "blank")
+
+
+```
+
+```{r echo=TRUE}
+par(mfrow=c(2,2))
+
+plot(df$total.sulfur.dioxide,df$quality,col="blue",
+     xlab = "Dióxido de Sulfuro",
+     ylab = "Calidad del vino",
+     main = "Calidad en función del Dióxido de Sulfuro")
+
+plot(df$chlorides,df$quality,col="blue",xlab = "Cloruros",
+     ylab = "Calidad del vino",
+     main = "Calidad en función de Cloruros")
+
+plot(df$density,df$quality,col="blue",xlab = "Densidad",
+     ylab = "Calidad del vino",
+     main = "Calidad en función de la Densidad")
+
+plot(df$fixed.acidity,df$quality,col="blue",xlab = "Acidez Fija",
+     ylab = "Calidad del vino",
+     main = "Calidad en función de la Acidez Fija")
+```
+
+```{r echo=TRUE}
+par(mfrow=c(2,2))
+
+plot(df$alcohol,df$quality,col="blue",xlab = "Alcohol",
+     ylab = "Calidad del vino",
+     main = "Calidad en función del Alcohol")
+
+plot(df$volatile.acidity,df$quality,col="blue",xlab = "Acidez Volátil",
+     ylab = "Calidad del vino",
+     main = "Calidad función de la Acidez Volátil")
+
+plot(df$sulphates,df$quality,col="blue",xlab = "Sulfatos",
+     ylab = "Calidad del vino",
+     main = "Calidad en función de los Sulfatos")
+
+plot(df$citric.acid,df$quality,col="blue",xlab = "Acido cítrico",
+     ylab = "Calidad del vino",
+     main = "Calidad en función del Acido cítrico")
+```
+
+
+
+# Resolución del problema. A partir de los resultados obtenidos, ¿cuáles son las conclusiones? ¿Los resultados permiten responder al problema?
+
+- A través del desarrollo del presente trabajo de investigación se justificó la importancia del conjunto de datos seleccionado, se describió cada una de sus variables de clase, se verificó el tipo de dato, su dominio de valores; para que a través de sus variables de clase determinar la variable objetivo o target, que sería la calidad del vino. Se realizó la limpieza de datos, tratamiento de los valores extremos, valores ausentes, vacíos, y graficas descriptivas para las variables. Se selecciono grupos de datos para las variables, tal como se muestra en el desarrollo del trabajo, se  analizó su distribución del mismo; y como **resultado** de la limpieza de datos  aplicamos técnicas para verificar si siguen una distribución normal las variables seleccionadas. Se realizó la correlación de las variables que intervienen en la calidad de vino, la prueba de hipótesis, se trabajo la regresión logística, la regresión multivariable, que a través de esta última podemos estimar la calidad de vino en función de las demás variables de clase que se expresó mediante la ecuación multivariable arriba descrita.
+
+- Mediante el análisis visual de los histogramas y cuartiles se asume normalidad en todas las variables, pero al aplicar en test de Lilliefors se descarta complementamente dicha aseveración ya que se comprueba con _p-value que en realidad no son normales._ (p<0.05).
+
+- En un inicio se plantea poner especial atención a las variables _acidez fija, acidez volátl, density y alcohol_ con el fin de conocer si influyen en la calidad del vino, por lo cual mediante el análisis de correlaciones podemos aseverar que presentan alta correlación en función de la calidad del vino: alcohol con 0.47, acidez volátil -0.38, density con -0,17 y acidez fija con 0.11. Además de las variables antes mencionadas tenemos a   **sulphates, citric.acid, total.sulfur.dioxide y chlorides** que tambien presentan una alta correlación.
+
+- Analizando en contraste de hipótesis de la cantidad de azúcar en función de la calidad del vino, podemos deducir que la **residual.sugar** no es significativa, ya que **p-valor** no es menor al nivel de significación.
+
+- En el contraste de hipótesis para la variable **total.sulfur.dioxide** se tiene un nivel de significancia menor a 0.05 por lo que se rechaza la **hipotesis nula** y podemos deducir que la variable es significativa.
+
+- El **p-valor** es menor a 0.05 en el contraste de hipótesis de la variable **alcohol** por lo que se considera significativa en la calidad del vino.
+
+
+
+
+
+
+
+
+
+
